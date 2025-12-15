@@ -19,8 +19,9 @@
             <!-- Model Selection -->
             <div class="mb-5">
                 <label class="block text-xs font-medium text-gray-300 mb-2 uppercase tracking-wide">Model</label>
-                <select id="modelSelect" class="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 text-gray-100 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm">
+                <select id="modelSelect" class="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 text-gray-100 rounded-md focus: ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm">
                     <option value="svm">Support Vector Machine (SVM)</option>
+                    <option value="linear">Linear Classifier</option>
                     <option value="transformer">XLM-RoBERTa (Transformer)</option>
                 </select>
                 <div class="mt-2 text-xs text-gray-500">
@@ -32,7 +33,7 @@
             <div class="mb-5">
                 <label class="block text-xs font-medium text-gray-300 mb-2 uppercase tracking-wide">Review Text</label>
                 <textarea id="reviewText" rows="6" 
-                    class="w-full px-4 py-3 bg-gray-700 border border-gray-600 text-gray-100 rounded-md focus: ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm placeholder-gray-500"
+                    class="w-full px-4 py-3 bg-gray-700 border border-gray-600 text-gray-100 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm placeholder-gray-500"
                     placeholder="Қазақ тілінде пікіріңізді енгізіңіз..."></textarea>
                 <div class="mt-2 text-xs text-gray-500">
                     Tip: Press <kbd class="px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded text-gray-400">Ctrl</kbd> + <kbd class="px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded text-gray-400">Enter</kbd> to analyze
@@ -86,12 +87,12 @@
             <div class="space-y-2 text-sm">
                 <div class="p-3 bg-gray-750 hover:bg-gray-700 rounded-md cursor-pointer transition-colors border border-gray-700" 
                      onclick="setReview('Мына кафе өте ұнады, тағамы дәмді және қызмет көрсету жақсы')">
-                    <span class="text-green-400 font-medium">Positive:</span>
+                    <span class="text-green-400 font-medium">Positive: </span>
                     <span class="text-gray-300 ml-2">Мына кафе өте ұнады, тағамы дәмді және қызмет көрсету жақсы</span>
                 </div>
                 <div class="p-3 bg-gray-750 hover:bg-gray-700 rounded-md cursor-pointer transition-colors border border-gray-700"
                      onclick="setReview('Қызмет өте нашар, күтуге тура келді және тағам суық болды')">
-                    <span class="text-red-400 font-medium">Negative:</span>
+                    <span class="text-red-400 font-medium">Negative: </span>
                     <span class="text-gray-300 ml-2">Қызмет өте нашар, күтуге тура келді және тағам суық болды</span>
                 </div>
                 <div class="p-3 bg-gray-750 hover:bg-gray-700 rounded-md cursor-pointer transition-colors border border-gray-700"
@@ -112,17 +113,19 @@
     </div>
 
     <script>
-        const API_URL = 'http://localhost:8000';
+        // Production API URL (Hugging Face Space)
+        const API_URL = 'https://jasikKarim-kazakh-sentiment-api.hf.space';
 
         // Model descriptions
         const modelDescriptions = {
             'svm': 'SVM with TF-IDF vectorization - Fast and efficient',
+            'linear': 'Linear classifier with TF-IDF - Simple and fast',
             'transformer': 'XLM-RoBERTa fine-tuned for Kazakh - Higher accuracy, slower inference'
         };
 
         // Update model description on selection change
         document.addEventListener('DOMContentLoaded', function() {
-            const modelSelect = document. getElementById('modelSelect');
+            const modelSelect = document.getElementById('modelSelect');
             const modelDescription = document.getElementById('modelDescription');
             
             modelSelect.addEventListener('change', function() {
@@ -139,7 +142,7 @@
                 const response = await fetch(`${API_URL}/api/models`);
                 if (response.ok) {
                     const data = await response.json();
-                    updateModelSelect(data. models);
+                    updateModelSelect(data.models);
                 }
             } catch (error) {
                 console.error('Failed to fetch models:', error);
@@ -155,7 +158,7 @@
             Array.from(modelSelect.options).forEach(option => {
                 const model = models.find(m => m.id === option.value);
                 if (! model) {
-                    option. disabled = true;
+                    option.disabled = true;
                     option.textContent += ' (Not loaded)';
                 }
             });
@@ -172,7 +175,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     const statusText = data.status === 'healthy' 
-                        ? `Connected (${data.models_loaded. length} model${data.models_loaded.length !== 1 ? 's' :  ''})` 
+                        ? `Connected (${data.models_loaded.length} model${data.models_loaded.length !== 1 ? 's' :  ''})` 
                         : `Degraded (${data.models_loaded.length} model${data.models_loaded.length !== 1 ? 's' : ''})`;
                     document.getElementById('apiStatus').textContent = statusText;
                     document.getElementById('apiStatus').className = data.status === 'healthy' 
@@ -225,7 +228,7 @@
             const text = document.getElementById('reviewText').value;
             const model = document.getElementById('modelSelect').value;
 
-            if (!text. trim()) {
+            if (!text.trim()) {
                 showError('Please enter a review');
                 return;
             }
@@ -237,7 +240,7 @@
             btn.disabled = true;
             btn.classList.add('opacity-50', 'cursor-not-allowed');
             btnText.classList.add('hidden');
-            btnLoader. classList.remove('hidden');
+            btnLoader.classList.remove('hidden');
 
             try {
                 const response = await fetch(`${API_URL}/api/predict`, {
@@ -245,7 +248,7 @@
                     headers:  { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         text: text,
-                        model:  model
+                        model: model
                     })
                 });
 
@@ -274,7 +277,7 @@
             const probabilitiesDiv = document.getElementById('probabilities');
             const ratingSection = document.getElementById('ratingSection');
             const rating = document.getElementById('rating');
-            const starRating = document. getElementById('starRating');
+            const starRating = document.getElementById('starRating');
 
             // Set sentiment
             sentimentLabel.textContent = data.sentiment;
@@ -285,7 +288,7 @@
                 neutral: 'text-yellow-400',
                 negative: 'text-red-400'
             };
-            sentimentLabel.className = `text-2xl font-semibold capitalize ${sentimentColors[data.sentiment. toLowerCase()] || 'text-gray-100'}`;
+            sentimentLabel.className = `text-2xl font-semibold capitalize ${sentimentColors[data.sentiment.toLowerCase()] || 'text-gray-100'}`;
 
             // Display probabilities
             probabilitiesDiv.innerHTML = `
@@ -302,7 +305,7 @@
             };
 
             // Sort probabilities by value (descending)
-            const sortedProbs = Object.entries(data. probabilities).sort((a, b) => b[1] - a[1]);
+            const sortedProbs = Object.entries(data.probabilities).sort((a, b) => b[1] - a[1]);
 
             sortedProbs.forEach(([label, prob]) => {
                 const percentage = (prob * 100).toFixed(1);
@@ -314,7 +317,7 @@
                         </div>
                         <div class="w-full bg-gray-700 rounded-full h-2">
                             <div class="${barColors[label]} h-2 rounded-full transition-all duration-700" 
-                                 style="width:  ${percentage}%"></div>
+                                 style="width: ${percentage}%"></div>
                         </div>
                     </div>
                 `;
@@ -322,13 +325,13 @@
 
             // Display rating
             if (data.predicted_rating !== null && data.predicted_rating !== undefined) {
-                rating.textContent = data.predicted_rating. toFixed(1);
+                rating.textContent = data.predicted_rating.toFixed(1);
                 starRating.innerHTML = generateStars(data.predicted_rating);
                 ratingSection.classList.remove('hidden');
             }
 
             // Show results with smooth scroll
-            resultsCard.classList. remove('hidden');
+            resultsCard.classList.remove('hidden');
             setTimeout(() => {
                 resultsCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }, 100);
@@ -356,7 +359,7 @@
         
         kbd {
             font-family: monospace;
-            font-size:  0.75rem;
+            font-size: 0.75rem;
         }
     </style>
 </body>

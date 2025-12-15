@@ -16,3 +16,4 @@ tokenizers==0.20.3
 
 # Optional but recommended
 python-multipart==0.0.18
+huggingface_hub
