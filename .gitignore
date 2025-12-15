@@ -1,0 +1,27 @@
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment variables
+.env
+
+# IDE files
+.vscode/
+.idea/
+
+# Model files (stored on Hugging Face)
+models/
+*.bin
+*.h5
+*.pkl
+*.pt
+*.joblib
+*.safetensors
+backend/models/*
+!backend/models/.gitkeep
