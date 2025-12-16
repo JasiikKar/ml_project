@@ -2,7 +2,7 @@
 venv/
 env/
 .venv/
-
+README.md
 # Python cache
 __pycache__/
 *.pyc

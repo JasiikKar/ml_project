@@ -7,98 +7,274 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-gray-900">
-    <div class="container mx-auto px-6 py-12 max-w-3xl">
+    <div class="container mx-auto px-6 py-12 max-w-4xl">
         <!-- Header -->
         <div class="mb-10">
             <h1 class="text-3xl font-semibold text-gray-100 mb-2">Kazakh Sentiment Analyzer</h1>
             <p class="text-gray-400 text-sm">Analyze sentiment of Kazakh reviews using ML models</p>
         </div>
 
-        <!-- Main Card -->
-        <div class="bg-gray-800 rounded-lg shadow-2xl p-8 mb-6 border border-gray-700">
-            <!-- Model Selection -->
-            <div class="mb-5">
-                <label class="block text-xs font-medium text-gray-300 mb-2 uppercase tracking-wide">Model</label>
-                <select id="modelSelect" class="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 text-gray-100 rounded-md focus: ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm">
-                    <option value="svm">Support Vector Machine (SVM)</option>
-                    <option value="logistic">Logistic Classifier</option>
-                    <option value="transformer">XLM-RoBERTa (Transformer)</option>
-                </select>
-                <div class="mt-2 text-xs text-gray-500">
-                    <span id="modelDescription">SVM with TF-IDF vectorization - Fast and efficient</span>
-                </div>
-            </div>
-
-            <!-- Review Input -->
-            <div class="mb-5">
-                <label class="block text-xs font-medium text-gray-300 mb-2 uppercase tracking-wide">Review Text</label>
-                <textarea id="reviewText" rows="6" 
-                    class="w-full px-4 py-3 bg-gray-700 border border-gray-600 text-gray-100 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-sm placeholder-gray-500"
-                    placeholder="Қазақ тілінде пікіріңізді енгізіңіз..."></textarea>
-                <div class="mt-2 text-xs text-gray-500">
-                    Tip: Press <kbd class="px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded text-gray-400">Ctrl</kbd> + <kbd class="px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded text-gray-400">Enter</kbd> to analyze
-                </div>
-            </div>
-
-            <!-- Error Message -->
-            <div id="errorMessage" class="hidden mb-4 p-3 bg-red-900 border border-red-700 rounded-md text-red-200 text-sm"></div>
-
-            <!-- Analyze Button -->
-            <button onclick="analyzeSentiment()" id="analyzeBtn"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium transition-colors text-sm">
-                <span id="btnText">Analyze Sentiment</span>
-                <span id="btnLoader" class="hidden">
-                    <svg class="animate-spin inline-block w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Analyzing...
-                </span>
+        <!-- Mode Tabs -->
+        <div class="flex mb-6 bg-gray-800 rounded-lg p-1 border border-gray-700">
+            <button onclick="switchMode('single')" id="singleTab" 
+                class="flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-colors bg-blue-600 text-white">
+                Single Analysis
+            </button>
+            <button onclick="switchMode('batch')" id="batchTab"
+                class="flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-colors text-gray-400 hover:text-gray-200">
+                Batch Analysis
             </button>
         </div>
 
-        <!-- Results Card -->
-        <div id="resultsCard" class="hidden bg-gray-800 rounded-lg shadow-2xl p-8 border border-gray-700">
-            <!-- Sentiment Result -->
-            <div class="mb-6">
-                <div class="text-xs text-gray-400 uppercase tracking-wide mb-2">Sentiment</div>
-                <div id="sentimentLabel" class="text-2xl font-semibold text-gray-100 capitalize"></div>
+        <!-- Single Analysis Mode -->
+        <div id="singleMode">
+            <!-- Main Card -->
+            <div class="bg-gray-800 rounded-lg shadow-2xl p-8 mb-6 border border-gray-700">
+                <!-- Model Selection -->
+                <div class="mb-5">
+                    <label class="block text-xs font-medium text-gray-300 mb-2 uppercase tracking-wide">Model</label>
+                    <select id="modelSelect" class="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 text-gray-100 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm">
+                        <option value="svm">Support Vector Machine (SVM)</option>
+                        <option value="logistic">Logistic Regression</option>
+                        <option value="transformer">XLM-RoBERTa (Transformer)</option>
+                    </select>
+                    <div class="mt-2 text-xs text-gray-500">
+                        <span id="modelDescription">SVM with TF-IDF vectorization - Fast and efficient</span>
+                    </div>
+                </div>
+
+                <!-- Review Input -->
+                <div class="mb-5">
+                    <label class="block text-xs font-medium text-gray-300 mb-2 uppercase tracking-wide">Review Text</label>
+                    <textarea id="reviewText" rows="6" 
+                        class="w-full px-4 py-3 bg-gray-700 border border-gray-600 text-gray-100 rounded-md focus:ring-2 focus: ring-blue-500 focus: border-transparent outline-none resize-none text-sm placeholder-gray-500"
+                        placeholder="Қазақ тілінде пікіріңізді енгізіңіз..."></textarea>
+                    <div class="mt-2 text-xs text-gray-500">
+                        Tip: Press <kbd class="px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded text-gray-400">Ctrl</kbd> + <kbd class="px-1.5 py-0.5 bg-gray-700 border border-gray-600 rounded text-gray-400">Enter</kbd> to analyze
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="errorMessage" class="hidden mb-4 p-3 bg-red-900 border border-red-700 rounded-md text-red-200 text-sm"></div>
+
+                <!-- Analyze Button -->
+                <button onclick="analyzeSentiment()" id="analyzeBtn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium transition-colors text-sm">
+                    <span id="btnText">Analyze Sentiment</span>
+                    <span id="btnLoader" class="hidden">
+                        <svg class="animate-spin inline-block w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Analyzing...
+                    </span>
+                </button>
             </div>
 
-            <!-- Confidence Scores -->
-            <div id="probabilities" class="space-y-3 mb-6"></div>
-
-            <!-- Predicted Rating -->
-            <div id="ratingSection" class="hidden pt-6 border-t border-gray-700">
-                <div class="text-xs text-gray-400 uppercase tracking-wide mb-2">Predicted Rating</div>
-                <div class="flex items-baseline gap-2">
-                    <span id="rating" class="text-2xl font-semibold text-gray-100"></span>
-                    <span class="text-gray-400 text-sm">/ 5.0</span>
+            <!-- Results Card -->
+            <div id="resultsCard" class="hidden bg-gray-800 rounded-lg shadow-2xl p-8 border border-gray-700">
+                <!-- Sentiment Result -->
+                <div class="mb-6">
+                    <div class="text-xs text-gray-400 uppercase tracking-wide mb-2">Sentiment</div>
+                    <div id="sentimentLabel" class="text-2xl font-semibold text-gray-100 capitalize"></div>
                 </div>
-                <div class="mt-3 flex gap-1">
-                    <div id="starRating"></div>
+
+                <!-- Confidence Scores -->
+                <div id="probabilities" class="space-y-3 mb-6"></div>
+
+                <!-- Predicted Rating -->
+                <div id="ratingSection" class="hidden pt-6 border-t border-gray-700">
+                    <div class="text-xs text-gray-400 uppercase tracking-wide mb-2">Predicted Rating</div>
+                    <div class="flex items-baseline gap-2">
+                        <span id="rating" class="text-2xl font-semibold text-gray-100"></span>
+                        <span class="text-gray-400 text-sm">/ 5.0</span>
+                    </div>
+                    <div class="mt-3 flex gap-1">
+                        <div id="starRating"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Example Reviews -->
+            <div class="mt-6 bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-700">
+                <h3 class="text-sm font-medium text-gray-300 mb-4 uppercase tracking-wide">Example Reviews</h3>
+                <div class="space-y-2 text-sm">
+                    <div class="p-3 bg-gray-750 hover:bg-gray-700 rounded-md cursor-pointer transition-colors border border-gray-700" 
+                         onclick="setReview('Мына кафе өте ұнады, тағамы дәмді және қызмет көрсету жақсы')">
+                        <span class="text-green-400 font-medium">Positive: </span>
+                        <span class="text-gray-300 ml-2">Мына кафе өте ұнады, тағамы дәмді және қызмет көрсету жақсы</span>
+                    </div>
+                    <div class="p-3 bg-gray-750 hover:bg-gray-700 rounded-md cursor-pointer transition-colors border border-gray-700"
+                         onclick="setReview('Қызмет өте нашар, күтуге тура келді және тағам суық болды')">
+                        <span class="text-red-400 font-medium">Negative:</span>
+                        <span class="text-gray-300 ml-2">Қызмет өте нашар, күтуге тура келді және тағам суық болды</span>
+                    </div>
+                    <div class="p-3 bg-gray-750 hover:bg-gray-700 rounded-md cursor-pointer transition-colors border border-gray-700"
+                         onclick="setReview('Орташа деңгейде, ерекше ештеме жоқ, қалыпты орын')">
+                        <span class="text-yellow-400 font-medium">Neutral:</span>
+                        <span class="text-gray-300 ml-2">Орташа деңгейде, ерекше ештеме жоқ, қалыпты орын</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Example Reviews -->
-        <div class="mt-6 bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-700">
-            <h3 class="text-sm font-medium text-gray-300 mb-4 uppercase tracking-wide">Example Reviews</h3>
-            <div class="space-y-2 text-sm">
-                <div class="p-3 bg-gray-750 hover:bg-gray-700 rounded-md cursor-pointer transition-colors border border-gray-700" 
-                     onclick="setReview('Мына кафе өте ұнады, тағамы дәмді және қызмет көрсету жақсы')">
-                    <span class="text-green-400 font-medium">Positive: </span>
-                    <span class="text-gray-300 ml-2">Мына кафе өте ұнады, тағамы дәмді және қызмет көрсету жақсы</span>
+        <!-- Batch Analysis Mode -->
+        <div id="batchMode" class="hidden">
+            <!-- Batch Input Card -->
+            <div class="bg-gray-800 rounded-lg shadow-2xl p-8 mb-6 border border-gray-700">
+                <!-- Model Selection -->
+                <div class="mb-5">
+                    <label class="block text-xs font-medium text-gray-300 mb-2 uppercase tracking-wide">Model</label>
+                    <select id="batchModelSelect" class="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 text-gray-100 rounded-md focus: ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm">
+                        <option value="svm">Support Vector Machine (SVM)</option>
+                        <option value="logistic">Logistic Regression</option>
+                        <option value="transformer">XLM-RoBERTa (Transformer)</option>
+                    </select>
                 </div>
-                <div class="p-3 bg-gray-750 hover:bg-gray-700 rounded-md cursor-pointer transition-colors border border-gray-700"
-                     onclick="setReview('Қызмет өте нашар, күтуге тура келді және тағам суық болды')">
-                    <span class="text-red-400 font-medium">Negative: </span>
-                    <span class="text-gray-300 ml-2">Қызмет өте нашар, күтуге тура келді және тағам суық болды</span>
+
+                <!-- Input Method Tabs -->
+                <div class="flex mb-4 bg-gray-700 rounded-lg p-1">
+                    <button onclick="switchBatchInput('text')" id="textInputTab"
+                        class="flex-1 py-2 px-3 rounded-md text-xs font-medium transition-colors bg-gray-600 text-white">
+                        Paste Text
+                    </button>
+                    <button onclick="switchBatchInput('csv')" id="csvInputTab"
+                        class="flex-1 py-2 px-3 rounded-md text-xs font-medium transition-colors text-gray-400 hover:text-gray-200">
+                        Upload CSV
+                    </button>
                 </div>
-                <div class="p-3 bg-gray-750 hover:bg-gray-700 rounded-md cursor-pointer transition-colors border border-gray-700"
-                     onclick="setReview('Орташа деңгейде, ерекше ештеме жоқ, қалыпты орын')">
-                    <span class="text-yellow-400 font-medium">Neutral:</span>
-                    <span class="text-gray-300 ml-2">Орташа деңгейде, ерекше ештеме жоқ, қалыпты орын</span>
+
+                <!-- Text Input -->
+                <div id="textInputSection">
+                    <label class="block text-xs font-medium text-gray-300 mb-2 uppercase tracking-wide">Reviews (one per line)</label>
+                    <textarea id="batchText" rows="8" 
+                        class="w-full px-4 py-3 bg-gray-700 border border-gray-600 text-gray-100 rounded-md focus:ring-2 focus: ring-blue-500 focus: border-transparent outline-none resize-none text-sm placeholder-gray-500"
+                        placeholder="Бірінші пікір&#10;Екінші пікір&#10;Үшінші пікір&#10;..."></textarea>
+                    <div class="mt-2 text-xs text-gray-500">
+                        Enter up to 100 reviews, one per line
+                    </div>
+                </div>
+
+                <!-- CSV Input -->
+                <div id="csvInputSection" class="hidden">
+                    <label class="block text-xs font-medium text-gray-300 mb-2 uppercase tracking-wide">Upload CSV File</label>
+                    <div class="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center hover:border-gray-500 transition-colors">
+                        <input type="file" id="csvFile" accept=".csv" class="hidden" onchange="handleFileSelect(event)">
+                        <div id="dropZone" class="cursor-pointer" onclick="document.getElementById('csvFile').click()">
+                            <svg class="mx-auto h-12 w-12 text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                            </svg>
+                            <p class="text-gray-400 text-sm mb-1">Click to upload or drag and drop</p>
+                            <p class="text-gray-500 text-xs">CSV file with 'text' or 'review' column (max 100 rows)</p>
+                        </div>
+                        <div id="selectedFile" class="hidden mt-4">
+                            <div class="flex items-center justify-center gap-2 text-gray-300">
+                                <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <span id="fileName" class="text-sm"></span>
+                                <button onclick="clearFile()" class="text-red-400 hover: text-red-300 ml-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="batchErrorMessage" class="hidden mt-4 p-3 bg-red-900 border border-red-700 rounded-md text-red-200 text-sm"></div>
+
+                <!-- Analyze Button -->
+                <button onclick="analyzeBatch()" id="batchAnalyzeBtn"
+                    class="w-full mt-5 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium transition-colors text-sm">
+                    <span id="batchBtnText">Analyze All Reviews</span>
+                    <span id="batchBtnLoader" class="hidden">
+                        <svg class="animate-spin inline-block w-4 h-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Analyzing...
+                    </span>
+                </button>
+            </div>
+
+            <!-- Batch Results -->
+            <div id="batchResultsCard" class="hidden bg-gray-800 rounded-lg shadow-2xl p-8 border border-gray-700">
+                <!-- Summary -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-gray-100 mb-4">Summary</h3>
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-green-900/30 border border-green-700 rounded-lg p-4 text-center">
+                            <div id="positiveCount" class="text-3xl font-bold text-green-400">0</div>
+                            <div class="text-xs text-green-300 uppercase tracking-wide mt-1">Positive</div>
+                        </div>
+                        <div class="bg-yellow-900/30 border border-yellow-700 rounded-lg p-4 text-center">
+                            <div id="neutralCount" class="text-3xl font-bold text-yellow-400">0</div>
+                            <div class="text-xs text-yellow-300 uppercase tracking-wide mt-1">Neutral</div>
+                        </div>
+                        <div class="bg-red-900/30 border border-red-700 rounded-lg p-4 text-center">
+                            <div id="negativeCount" class="text-3xl font-bold text-red-400">0</div>
+                            <div class="text-xs text-red-300 uppercase tracking-wide mt-1">Negative</div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="mb-2">
+                        <div class="flex h-4 rounded-full overflow-hidden bg-gray-700">
+                            <div id="positiveBar" class="bg-green-500 transition-all duration-500" style="width: 0%"></div>
+                            <div id="neutralBar" class="bg-yellow-500 transition-all duration-500" style="width: 0%"></div>
+                            <div id="negativeBar" class="bg-red-500 transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500">
+                        <span id="positivePercent">0%</span>
+                        <span id="neutralPercent">0%</span>
+                        <span id="negativePercent">0%</span>
+                    </div>
+                </div>
+
+                <!-- Results Table -->
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-100">Results</h3>
+                        <div class="flex gap-2">
+                            <button onclick="filterResults('all')" class="filter-btn active px-3 py-1 text-xs rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600" data-filter="all">All</button>
+                            <button onclick="filterResults('positive')" class="filter-btn px-3 py-1 text-xs rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600" data-filter="positive">Positive</button>
+                            <button onclick="filterResults('neutral')" class="filter-btn px-3 py-1 text-xs rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600" data-filter="neutral">Neutral</button>
+                            <button onclick="filterResults('negative')" class="filter-btn px-3 py-1 text-xs rounded-md bg-gray-700 text-gray-300 hover:bg-gray-600" data-filter="negative">Negative</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b border-gray-700">
+                                    <th class="text-left py-3 px-2 text-xs font-medium text-gray-400 uppercase tracking-wide">#</th>
+                                    <th class="text-left py-3 px-2 text-xs font-medium text-gray-400 uppercase tracking-wide">Review</th>
+                                    <th class="text-left py-3 px-2 text-xs font-medium text-gray-400 uppercase tracking-wide">Sentiment</th>
+                                    <th class="text-left py-3 px-2 text-xs font-medium text-gray-400 uppercase tracking-wide">Confidence</th>
+                                    <th class="text-left py-3 px-2 text-xs font-medium text-gray-400 uppercase tracking-wide">Rating</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsTableBody" class="divide-y divide-gray-700">
+                                <!-- Results will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="noResultsMessage" class="hidden py-8 text-center text-gray-500">
+                        No results match the current filter
+                    </div>
+                </div>
+
+                <!-- Export Button -->
+                <div class="mt-6 pt-6 border-t border-gray-700">
+                    <button onclick="exportResults()" class="w-full bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-md font-medium transition-colors text-sm">
+                        <svg class="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Export Results as CSV
+                    </button>
                 </div>
             </div>
         </div>
@@ -116,12 +292,81 @@
         // Production API URL (Hugging Face Space)
         const API_URL = 'https://jasikKarim-kazakh-sentiment-api.hf.space';
 
+        // Store batch results for filtering/export
+        let batchResults = [];
+        let currentFilter = 'all';
+
         // Model descriptions
         const modelDescriptions = {
             'svm': 'SVM with TF-IDF vectorization - Fast and efficient',
-            'logistic': 'Logistic classifier with TF-IDF - Simple and fast',
+            'logistic': 'Logistic regression with TF-IDF - Simple and fast',
             'transformer': 'XLM-RoBERTa fine-tuned for Kazakh - Higher accuracy, slower inference'
         };
+
+        // Switch between single and batch mode
+        function switchMode(mode) {
+            const singleMode = document.getElementById('singleMode');
+            const batchMode = document.getElementById('batchMode');
+            const singleTab = document.getElementById('singleTab');
+            const batchTab = document.getElementById('batchTab');
+
+            if (mode === 'single') {
+                singleMode.classList.remove('hidden');
+                batchMode.classList.add('hidden');
+                singleTab.classList.add('bg-blue-600', 'text-white');
+                singleTab.classList.remove('text-gray-400');
+                batchTab.classList.remove('bg-blue-600', 'text-white');
+                batchTab.classList.add('text-gray-400');
+            } else {
+                singleMode.classList.add('hidden');
+                batchMode.classList.remove('hidden');
+                batchTab.classList.add('bg-blue-600', 'text-white');
+                batchTab.classList.remove('text-gray-400');
+                singleTab.classList.remove('bg-blue-600', 'text-white');
+                singleTab.classList.add('text-gray-400');
+            }
+        }
+
+        // Switch between text and CSV input
+        function switchBatchInput(type) {
+            const textSection = document.getElementById('textInputSection');
+            const csvSection = document.getElementById('csvInputSection');
+            const textTab = document.getElementById('textInputTab');
+            const csvTab = document.getElementById('csvInputTab');
+
+            if (type === 'text') {
+                textSection.classList.remove('hidden');
+                csvSection.classList.add('hidden');
+                textTab.classList.add('bg-gray-600', 'text-white');
+                textTab.classList.remove('text-gray-400');
+                csvTab.classList.remove('bg-gray-600', 'text-white');
+                csvTab.classList.add('text-gray-400');
+            } else {
+                textSection.classList.add('hidden');
+                csvSection.classList.remove('hidden');
+                csvTab.classList.add('bg-gray-600', 'text-white');
+                csvTab.classList.remove('text-gray-400');
+                textTab.classList.remove('bg-gray-600', 'text-white');
+                textTab.classList.add('text-gray-400');
+            }
+        }
+
+        // Handle file selection
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('dropZone').classList.add('hidden');
+                document.getElementById('selectedFile').classList.remove('hidden');
+                document.getElementById('fileName').textContent = file.name;
+            }
+        }
+
+        // Clear selected file
+        function clearFile() {
+            document.getElementById('csvFile').value = '';
+            document.getElementById('dropZone').classList.remove('hidden');
+            document.getElementById('selectedFile').classList.add('hidden');
+        }
 
         // Update model description on selection change
         document.addEventListener('DOMContentLoaded', function() {
@@ -134,6 +379,29 @@
 
             // Fetch available models from API
             fetchAvailableModels();
+
+            // Setup drag and drop
+            const dropZone = document.getElementById('dropZone');
+            const csvSection = document.getElementById('csvInputSection');
+
+            csvSection.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                csvSection.classList.add('border-blue-500');
+            });
+
+            csvSection.addEventListener('dragleave', () => {
+                csvSection.classList.remove('border-blue-500');
+            });
+
+            csvSection.addEventListener('drop', (e) => {
+                e.preventDefault();
+                csvSection.classList.remove('border-blue-500');
+                const file = e.dataTransfer.files[0];
+                if (file && file.name.endsWith('.csv')) {
+                    document.getElementById('csvFile').files = e.dataTransfer.files;
+                    handleFileSelect({ target: { files: [file] } });
+                }
+            });
         });
 
         // Fetch available models from API
@@ -151,21 +419,23 @@
 
         // Update model select options based on available models
         function updateModelSelect(models) {
-            const modelSelect = document.getElementById('modelSelect');
+            const selects = [document.getElementById('modelSelect'), document.getElementById('batchModelSelect')];
             const loadedModels = document.getElementById('loadedModels');
             
-            // Disable options for models that aren't loaded
-            Array.from(modelSelect.options).forEach(option => {
-                const model = models.find(m => m.id === option.value);
-                if (! model) {
-                    option.disabled = true;
-                    option.textContent += ' (Not loaded)';
-                }
+            selects.forEach(select => {
+                Array.from(select.options).forEach(option => {
+                    const model = models.find(m => m.id === option.value);
+                    if (! model) {
+                        option.disabled = true;
+                        if (! option.textContent.includes('(Not loaded)')) {
+                            option.textContent += ' (Not loaded)';
+                        }
+                    }
+                });
             });
 
-            // Show loaded models in footer
             const modelNames = models.map(m => m.name).join(', ');
-            loadedModels.textContent = `Loaded: ${modelNames}`;
+            loadedModels.textContent = `Loaded:  ${modelNames}`;
         }
 
         // Check API status
@@ -197,8 +467,8 @@
         }
 
         // Show error
-        function showError(message) {
-            const errorDiv = document.getElementById('errorMessage');
+        function showError(message, isBatch = false) {
+            const errorDiv = document.getElementById(isBatch ? 'batchErrorMessage' : 'errorMessage');
             errorDiv.textContent = message;
             errorDiv.classList.remove('hidden');
             setTimeout(() => errorDiv.classList.add('hidden'), 4000);
@@ -223,7 +493,7 @@
             return starsHTML;
         }
 
-        // Analyze sentiment
+        // Analyze single sentiment
         async function analyzeSentiment() {
             const text = document.getElementById('reviewText').value;
             const model = document.getElementById('modelSelect').value;
@@ -233,7 +503,6 @@
                 return;
             }
 
-            // Loading state
             const btn = document.getElementById('analyzeBtn');
             const btnText = document.getElementById('btnText');
             const btnLoader = document.getElementById('btnLoader');
@@ -246,10 +515,7 @@
                 const response = await fetch(`${API_URL}/api/predict`, {
                     method: 'POST',
                     headers:  { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        text: text,
-                        model: model
-                    })
+                    body: JSON.stringify({ text: text, model: model })
                 });
 
                 if (! response.ok) {
@@ -270,7 +536,91 @@
             }
         }
 
-        // Display results
+        // Analyze batch
+        async function analyzeBatch() {
+            const model = document.getElementById('batchModelSelect').value;
+            const textInput = document.getElementById('batchText').value;
+            const csvFile = document.getElementById('csvFile').files[0];
+            const isTextMode = ! document.getElementById('textInputSection').classList.contains('hidden');
+
+            const btn = document.getElementById('batchAnalyzeBtn');
+            const btnText = document.getElementById('batchBtnText');
+            const btnLoader = document.getElementById('batchBtnLoader');
+
+            try {
+                let data;
+
+                if (isTextMode) {
+                    // Text input mode
+                    const texts = textInput.split('\n').filter(t => t.trim());
+                    if (texts.length === 0) {
+                        showError('Please enter at least one review', true);
+                        return;
+                    }
+                    if (texts.length > 100) {
+                        showError('Maximum 100 reviews allowed', true);
+                        return;
+                    }
+
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    btnText.classList.add('hidden');
+                    btnLoader.classList.remove('hidden');
+
+                    const response = await fetch(`${API_URL}/api/batch/predict`, {
+                        method: 'POST',
+                        headers: { 'Content-Type':  'application/json' },
+                        body: JSON.stringify({ texts:  texts, model: model })
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || 'Failed to analyze');
+                    }
+
+                    data = await response.json();
+                } else {
+                    // CSV input mode
+                    if (!csvFile) {
+                        showError('Please select a CSV file', true);
+                        return;
+                    }
+
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    btnText.classList.add('hidden');
+                    btnLoader.classList.remove('hidden');
+
+                    const formData = new FormData();
+                    formData.append('file', csvFile);
+                    formData.append('model', model);
+
+                    const response = await fetch(`${API_URL}/api/batch/csv? model=${model}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.detail || 'Failed to process CSV');
+                    }
+
+                    data = await response.json();
+                }
+
+                displayBatchResults(data);
+
+            } catch (error) {
+                showError(error.message || 'Failed to connect to API', true);
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnText.classList.remove('hidden');
+                btnLoader.classList.add('hidden');
+            }
+        }
+
+        // Display single results
         function displayResults(data) {
             const resultsCard = document.getElementById('resultsCard');
             const sentimentLabel = document.getElementById('sentimentLabel');
@@ -279,18 +629,15 @@
             const rating = document.getElementById('rating');
             const starRating = document.getElementById('starRating');
 
-            // Set sentiment
             sentimentLabel.textContent = data.sentiment;
 
-            // Color coding for sentiment
             const sentimentColors = {
-                positive:  'text-green-400',
+                positive: 'text-green-400',
                 neutral: 'text-yellow-400',
                 negative: 'text-red-400'
             };
             sentimentLabel.className = `text-2xl font-semibold capitalize ${sentimentColors[data.sentiment.toLowerCase()] || 'text-gray-100'}`;
 
-            // Display probabilities
             probabilitiesDiv.innerHTML = `
                 <div class="flex items-center justify-between mb-3">
                     <div class="text-xs text-gray-400 uppercase tracking-wide">Confidence Scores</div>
@@ -304,7 +651,6 @@
                 negative: 'bg-red-500'
             };
 
-            // Sort probabilities by value (descending)
             const sortedProbs = Object.entries(data.probabilities).sort((a, b) => b[1] - a[1]);
 
             sortedProbs.forEach(([label, prob]) => {
@@ -317,30 +663,145 @@
                         </div>
                         <div class="w-full bg-gray-700 rounded-full h-2">
                             <div class="${barColors[label]} h-2 rounded-full transition-all duration-700" 
-                                 style="width: ${percentage}%"></div>
+                                 style="width:  ${percentage}%"></div>
                         </div>
                     </div>
                 `;
             });
 
-            // Display rating
             if (data.predicted_rating !== null && data.predicted_rating !== undefined) {
                 rating.textContent = data.predicted_rating.toFixed(1);
                 starRating.innerHTML = generateStars(data.predicted_rating);
                 ratingSection.classList.remove('hidden');
             }
 
-            // Show results with smooth scroll
             resultsCard.classList.remove('hidden');
             setTimeout(() => {
                 resultsCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }, 100);
         }
 
+        // Display batch results
+        function displayBatchResults(data) {
+            batchResults = data.results;
+            const summary = data.summary;
+            const total = data.total;
+
+            // Update summary counts
+            document.getElementById('positiveCount').textContent = summary.positive;
+            document.getElementById('neutralCount').textContent = summary.neutral;
+            document.getElementById('negativeCount').textContent = summary.negative;
+
+            // Update progress bars
+            const posPercent = total > 0 ? (summary.positive / total * 100) : 0;
+            const neuPercent = total > 0 ? (summary.neutral / total * 100) : 0;
+            const negPercent = total > 0 ? (summary.negative / total * 100) : 0;
+
+            document.getElementById('positiveBar').style.width = posPercent + '%';
+            document.getElementById('neutralBar').style.width = neuPercent + '%';
+            document.getElementById('negativeBar').style.width = negPercent + '%';
+
+            document.getElementById('positivePercent').textContent = posPercent.toFixed(1) + '%';
+            document.getElementById('neutralPercent').textContent = neuPercent.toFixed(1) + '%';
+            document.getElementById('negativePercent').textContent = negPercent.toFixed(1) + '%';
+
+            // Render table
+            renderResultsTable(batchResults);
+
+            // Show results
+            document.getElementById('batchResultsCard').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('batchResultsCard').scrollIntoView({ behavior: 'smooth', block:  'start' });
+            }, 100);
+        }
+
+        // Render results table
+        function renderResultsTable(results) {
+            const tbody = document.getElementById('resultsTableBody');
+            const noResults = document.getElementById('noResultsMessage');
+            
+            const filteredResults = currentFilter === 'all' 
+                ? results 
+                : results.filter(r => r.sentiment.toLowerCase() === currentFilter);
+
+            if (filteredResults.length === 0) {
+                tbody.innerHTML = '';
+                noResults.classList.remove('hidden');
+                return;
+            }
+
+            noResults.classList.add('hidden');
+
+            const sentimentColors = {
+                positive: 'text-green-400 bg-green-900/30',
+                neutral: 'text-yellow-400 bg-yellow-900/30',
+                negative: 'text-red-400 bg-red-900/30'
+            };
+
+            tbody.innerHTML = filteredResults.map((result, index) => {
+                const confidence = Math.max(...Object.values(result.probabilities)) * 100;
+                const originalIndex = results.indexOf(result) + 1;
+                
+                return `
+                    <tr class="hover:bg-gray-750 transition-colors" data-sentiment="${result.sentiment.toLowerCase()}">
+                        <td class="py-3 px-2 text-gray-500">${originalIndex}</td>
+                        <td class="py-3 px-2 text-gray-300 max-w-xs truncate" title="${result.text}">${result.text}</td>
+                        <td class="py-3 px-2">
+                            <span class="px-2 py-1 rounded text-xs font-medium capitalize ${sentimentColors[result.sentiment.toLowerCase()]}">
+                                ${result.sentiment}
+                            </span>
+                        </td>
+                        <td class="py-3 px-2 text-gray-400">${confidence.toFixed(1)}%</td>
+                        <td class="py-3 px-2 text-gray-400">${result.predicted_rating.toFixed(1)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Filter results
+        function filterResults(filter) {
+            currentFilter = filter;
+            
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.dataset.filter === filter) {
+                    btn.classList.add('bg-blue-600', 'text-white');
+                    btn.classList.remove('bg-gray-700', 'text-gray-300');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('bg-gray-700', 'text-gray-300');
+                }
+            });
+
+            renderResultsTable(batchResults);
+        }
+
+        // Export results as CSV
+        function exportResults() {
+            if (batchResults.length === 0) return;
+
+            const headers = ['#', 'Text', 'Sentiment', 'Positive %', 'Neutral %', 'Negative %', 'Rating'];
+            const rows = batchResults.map((r, i) => [
+                i + 1,
+                `"${r.text.replace(/"/g, '""')}"`,
+                r.sentiment,
+                (r.probabilities.positive * 100).toFixed(2),
+                (r.probabilities.neutral * 100).toFixed(2),
+                (r.probabilities.negative * 100).toFixed(2),
+                r.predicted_rating.toFixed(2)
+            ]);
+
+            const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `sentiment_analysis_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
         // Initialize
         window.addEventListener('load', () => {
             checkAPIStatus();
-            // Check API status every 30 seconds
             setInterval(checkAPIStatus, 30000);
         });
 
@@ -350,11 +811,17 @@
                 analyzeSentiment();
             }
         });
+
+        document.getElementById('batchText').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                analyzeBatch();
+            }
+        });
     </script>
 
     <style>
         .bg-gray-750 {
-            background-color:  #2d3748;
+            background-color: #2d3748;
         }
         
         kbd {

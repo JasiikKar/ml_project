@@ -1,7 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 import joblib
 import uvicorn
 import numpy as np
@@ -10,6 +10,8 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from huggingface_hub import hf_hub_download, snapshot_download
 import torch
 import os
+import csv
+import io
 
 app = FastAPI(
     title="Kazakh Sentiment Analyzer API",
@@ -44,6 +46,11 @@ class ReviewRequest(BaseModel):
     text: str = Field(..., min_length=1, description="Review text in Kazakh")
     model: str = Field(default="svm", description="Model to use for prediction")
 
+# Batch request model
+class BatchReviewRequest(BaseModel):
+    texts: List[str] = Field(..., min_items=1, max_items=100, description="List of review texts in Kazakh")
+    model: str = Field(default="svm", description="Model to use for prediction")
+
 # Response model
 class SentimentResponse(BaseModel):
     model_config = {"protected_namespaces": ()}
@@ -53,6 +60,15 @@ class SentimentResponse(BaseModel):
     predicted_rating: Optional[float] = None
     text: str
     model_used:  str
+
+# Batch response model
+class BatchSentimentResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
+    
+    results: List[SentimentResponse]
+    total:  int
+    summary: Dict[str, int]
+    model_used: str
 
 
 # SVM Model class
@@ -116,17 +132,17 @@ class SVMModel:
             raise
 
 
-# Linear Model class
-class LinearModel:
-    """Linear model loaded from joblib files"""
+# Logistic Model class
+class LogisticModel: 
+    """Logistic model loaded from joblib files"""
     
     def __init__(self):
-        self.name = "Linear"
-        try:
+        self.name = "Logistic"
+        try: 
             self.model = joblib.load(get_model_path("linear_model.joblib"))
             self.vectorizer = joblib.load(get_model_path("linear_vector.joblib"))
             self.metadata = joblib.load(get_model_path("linear_metadata.joblib"))
-            print(f"✓ Linear model loaded successfully")
+            print(f"✓ Logistic model loaded successfully")
             print(f"✓ Vectorizer loaded successfully")
             print(f"✓ Metadata loaded successfully")
             
@@ -136,10 +152,10 @@ class LinearModel:
                 self.label_mapping = {0: 'negative', 1: 'neutral', 2: 'positive'}
                 
         except Exception as e:
-            print(f"Error loading Linear model: {e}")
+            print(f"Error loading Logistic model:  {e}")
             raise
     
-    def predict(self, text:  str) -> Dict:
+    def predict(self, text: str) -> Dict:
         try:
             text_vectorized = self.vectorizer.transform([text])
             prediction = self.model.predict(text_vectorized)[0]
@@ -167,12 +183,12 @@ class LinearModel:
             )
             
             return {
-                'sentiment': sentiment,
-                'probabilities': prob_dict,
+                'sentiment':  sentiment,
+                'probabilities':  prob_dict,
                 'predicted_rating': rating
             }
             
-        except Exception as e:
+        except Exception as e: 
             print(f"Prediction error: {e}")
             raise
 
@@ -196,14 +212,14 @@ class TransformerModel:
             self.model.eval()
             print(f"✓ Transformer model loaded successfully")
             print(f"✓ Model parameters: {self.model.num_parameters():,}")
-            print(f"✓ Device: {self.device}")
+            print(f"✓ Device:  {self.device}")
             
         except Exception as e:
-            print(f"Error loading transformer model:  {e}")
+            print(f"Error loading transformer model: {e}")
             raise
     
     def predict(self, text: str) -> Dict:
-        try:
+        try: 
             inputs = self.tokenizer(
                 text,
                 return_tensors='pt',
@@ -254,21 +270,21 @@ try:
 except Exception as e: 
     print(f"✗ Failed to initialize SVM model: {e}")
 
-# Load Linear model
+# Load Logistic model
 try:
-    linear_model = LinearModel()
-    models['linear'] = linear_model
-    print(f"✓ Linear model initialized successfully")
-except Exception as e: 
-    print(f"✗ Failed to initialize Linear model: {e}")
+    logistic_model = LogisticModel()
+    models['logistic'] = logistic_model
+    print(f"✓ Logistic model initialized successfully")
+except Exception as e:
+    print(f"✗ Failed to initialize Logistic model: {e}")
 
 # Load Transformer model
 try:
     transformer_model = TransformerModel()
     models['transformer'] = transformer_model
     print(f"✓ Transformer model initialized successfully")
-except Exception as e:
-    print(f"✗ Failed to initialize Transformer model: {e}")
+except Exception as e: 
+    print(f"✗ Failed to initialize Transformer model:  {e}")
 
 
 @app.get("/")
@@ -279,7 +295,9 @@ async def root():
         "available_models": list(models.keys()),
         "endpoints": {
             "predict": "/api/predict (POST)",
-            "models": "/api/models (GET)",
+            "batch_predict": "/api/batch/predict (POST)",
+            "batch_csv": "/api/batch/csv (POST)",
+            "models":  "/api/models (GET)",
             "health": "/health (GET)",
             "docs": "/docs (GET)"
         }
@@ -301,16 +319,16 @@ async def get_available_models():
         available_models.append({
             "id": "svm",
             "name": "Support Vector Machine (SVM)",
-            "description": "SVM classifier with TF-IDF vectorization for Kazakh text",
+            "description":  "SVM classifier with TF-IDF vectorization for Kazakh text",
             "type": "sklearn",
             "status": "loaded"
         })
     
-    if 'linear' in models: 
+    if 'logistic' in models: 
         available_models.append({
-            "id": "linear",
-            "name": "Linear Classifier",
-            "description": "Linear classifier with TF-IDF vectorization for Kazakh text",
+            "id": "logistic",
+            "name": "Logistic Regression",
+            "description": "Logistic regression classifier with TF-IDF vectorization for Kazakh text",
             "type": "sklearn",
             "status": "loaded"
         })
@@ -332,7 +350,7 @@ async def predict_sentiment(request: ReviewRequest):
         if not models:
             raise HTTPException(
                 status_code=503,
-                detail="Models not loaded. Please check server logs."
+                detail="Models not loaded.  Please check server logs."
             )
         
         if request.model not in models:
@@ -359,6 +377,159 @@ async def predict_sentiment(request: ReviewRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
+
+# ===== BATCH ANALYSIS ENDPOINTS =====
+
+@app.post("/api/batch/predict", response_model=BatchSentimentResponse)
+async def batch_predict_sentiment(request: BatchReviewRequest):
+    """Analyze multiple texts at once (max 100)"""
+    try:
+        if not models:
+            raise HTTPException(
+                status_code=503,
+                detail="Models not loaded. Please check server logs."
+            )
+        
+        if request.model not in models:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid model. Choose from: {list(models.keys())}"
+            )
+        
+        selected_model = models[request.model]
+        results = []
+        summary = {"positive": 0, "neutral": 0, "negative": 0}
+        
+        for text in request.texts:
+            if not text.strip():
+                continue
+                
+            prediction = selected_model.predict(text)
+            
+            result = SentimentResponse(
+                sentiment=prediction['sentiment'],
+                probabilities=prediction['probabilities'],
+                predicted_rating=prediction['predicted_rating'],
+                text=text[: 100],
+                model_used=selected_model.name
+            )
+            results.append(result)
+            
+            # Update summary
+            sentiment_lower = prediction['sentiment'].lower()
+            if sentiment_lower in summary:
+                summary[sentiment_lower] += 1
+        
+        return BatchSentimentResponse(
+            results=results,
+            total=len(results),
+            summary=summary,
+            model_used=selected_model.name
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e: 
+        raise HTTPException(status_code=500, detail=f"Batch prediction error: {str(e)}")
+
+
+@app.post("/api/batch/csv")
+async def batch_predict_csv(
+    file: UploadFile = File(...),
+    model: str = "svm"
+):
+    """
+    Analyze reviews from CSV file. 
+    CSV should have a column named 'text' or 'review' containing the reviews.
+    Returns JSON with results and summary.
+    """
+    try:
+        if not models: 
+            raise HTTPException(
+                status_code=503,
+                detail="Models not loaded. Please check server logs."
+            )
+        
+        if model not in models: 
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid model. Choose from: {list(models.keys())}"
+            )
+        
+        # Check file type
+        if not file.filename.endswith('.csv'):
+            raise HTTPException(
+                status_code=400,
+                detail="Please upload a CSV file."
+            )
+        
+        # Read CSV file
+        content = await file.read()
+        decoded = content.decode('utf-8')
+        csv_reader = csv.DictReader(io.StringIO(decoded))
+        
+        # Find text column
+        fieldnames = csv_reader.fieldnames or []
+        text_column = None
+        for col in ['text', 'review', 'comment', 'content', 'Text', 'Review', 'Comment', 'Content']:
+            if col in fieldnames:
+                text_column = col
+                break
+        
+        if not text_column: 
+            raise HTTPException(
+                status_code=400,
+                detail=f"CSV must have a column named 'text', 'review', 'comment', or 'content'.  Found columns: {fieldnames}"
+            )
+        
+        selected_model = models[model]
+        results = []
+        summary = {"positive": 0, "neutral": 0, "negative": 0}
+        
+        row_count = 0
+        max_rows = 100  # Limit to prevent overload
+        
+        for row in csv_reader:
+            if row_count >= max_rows:
+                break
+                
+            text = row.get(text_column, '').strip()
+            if not text:
+                continue
+            
+            prediction = selected_model.predict(text)
+            
+            result = {
+                "text": text[: 100],
+                "sentiment": prediction['sentiment'],
+                "probabilities": prediction['probabilities'],
+                "predicted_rating": prediction['predicted_rating'],
+                "model_used": selected_model.name
+            }
+            results.append(result)
+            
+            # Update summary
+            sentiment_lower = prediction['sentiment'].lower()
+            if sentiment_lower in summary:
+                summary[sentiment_lower] += 1
+            
+            row_count += 1
+        
+        return {
+            "filename": file.filename,
+            "results": results,
+            "total": len(results),
+            "summary":  summary,
+            "model_used": selected_model.name,
+            "limited":  row_count >= max_rows
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e: 
+        raise HTTPException(status_code=500, detail=f"CSV processing error: {str(e)}")
+
+
 @app.get("/api/stats")
 async def get_model_stats():
     stats = {}
@@ -376,30 +547,30 @@ async def get_model_stats():
                 model_info["metadata"] = svm.metadata
             else:
                 model_info["metadata"] = {
-                    "label_mapping":  svm.label_mapping
+                    "label_mapping": svm.label_mapping
                 }
         
         stats['svm'] = model_info
     
-    if 'linear' in models:
-        linear = models['linear']
+    if 'logistic' in models:
+        logistic = models['logistic']
         model_info = {
-            "model_type": "Linear",
+            "model_type": "Logistic",
             "status": "loaded",
             "metadata": {}
         }
         
-        if hasattr(linear, 'metadata'):
-            if isinstance(linear.metadata, dict):
-                model_info["metadata"] = linear.metadata
+        if hasattr(logistic, 'metadata'):
+            if isinstance(logistic.metadata, dict):
+                model_info["metadata"] = logistic.metadata
             else:
                 model_info["metadata"] = {
-                    "label_mapping":  linear.label_mapping
+                    "label_mapping":  logistic.label_mapping
                 }
         
-        stats['linear'] = model_info
+        stats['logistic'] = model_info
     
-    if 'transformer' in models: 
+    if 'transformer' in models:
         transformer = models['transformer']
         stats['transformer'] = {
             "model_type": "XLM-RoBERTa",
@@ -411,7 +582,7 @@ async def get_model_stats():
     
     return stats
 
-if __name__ == "__main__":
+if __name__ == "__main__": 
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
