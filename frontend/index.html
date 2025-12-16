@@ -21,7 +21,7 @@
                 <label class="block text-xs font-medium text-gray-300 mb-2 uppercase tracking-wide">Model</label>
                 <select id="modelSelect" class="w-full px-4 py-2.5 bg-gray-700 border border-gray-600 text-gray-100 rounded-md focus: ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm">
                     <option value="svm">Support Vector Machine (SVM)</option>
-                    <option value="linear">Linear Classifier</option>
+                    <option value="logistic">Logistic Classifier</option>
                     <option value="transformer">XLM-RoBERTa (Transformer)</option>
                 </select>
                 <div class="mt-2 text-xs text-gray-500">
@@ -119,7 +119,7 @@
         // Model descriptions
         const modelDescriptions = {
             'svm': 'SVM with TF-IDF vectorization - Fast and efficient',
-            'linear': 'Linear classifier with TF-IDF - Simple and fast',
+            'logistic': 'Logistic classifier with TF-IDF - Simple and fast',
             'transformer': 'XLM-RoBERTa fine-tuned for Kazakh - Higher accuracy, slower inference'
         };
 
