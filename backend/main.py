@@ -259,6 +259,70 @@ class TransformerModel:
             raise
 
 
+# New Aza Transformer Model class
+class AzaTransformerModel:
+    """Alternative XLM-RoBERTa model (Aza_model) for Kazakh sentiment analysis"""
+    
+    def __init__(self):
+        self.name = "XLM-RoBERTa (Aza)"
+        self.label_mapping = {0: 'negative', 1: 'neutral', 2: 'positive'}
+        self.max_length = 128
+        self.device = torch.device("cpu")
+        
+        try:
+            model_path = get_transformer_path("Aza_model")
+            print(f"Loading Aza transformer model from {model_path}...")
+            self.tokenizer = AutoTokenizer.from_pretrained(model_path)
+            self.model = AutoModelForSequenceClassification.from_pretrained(model_path)
+            self.model.to(self.device)
+            self.model.eval()
+            print(f"✓ Aza transformer model loaded successfully")
+            print(f"✓ Aza model parameters: {self.model.num_parameters():,}")
+            print(f"✓ Aza device: {self.device}")
+        except Exception as e:
+            print(f"Error loading Aza transformer model: {e}")
+            raise
+    
+    def predict(self, text: str) -> Dict:
+        try:
+            inputs = self.tokenizer(
+                text,
+                return_tensors='pt',
+                truncation=True,
+                max_length=self.max_length,
+                padding=True
+            )
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            
+            with torch.no_grad():
+                outputs = self.model(**inputs)
+                probs = torch.softmax(outputs.logits, dim=-1)
+                pred = torch.argmax(probs, dim=-1).item()
+            
+            sentiment = self.label_mapping.get(pred, 'neutral')
+            
+            prob_dict = {
+                'negative': float(probs[0][0].item()),
+                'neutral': float(probs[0][1].item()),
+                'positive': float(probs[0][2].item())
+            }
+            
+            rating = (
+                prob_dict['positive'] * 5.0 +
+                prob_dict['neutral'] * 3.0 +
+                prob_dict['negative'] * 1.0
+            )
+            
+            return {
+                'sentiment': sentiment,
+                'probabilities': prob_dict,
+                'predicted_rating': rating
+            }
+        except Exception as e:
+            print(f"Aza transformer prediction error: {e}")
+            raise
+
+
 # Initialize models
 models = {}
 
@@ -285,6 +349,14 @@ try:
     print(f"✓ Transformer model initialized successfully")
 except Exception as e: 
     print(f"✗ Failed to initialize Transformer model:  {e}")
+
+# Load Aza Transformer model
+try:
+    aza_transformer_model = AzaTransformerModel()
+    models['aza_transformer'] = aza_transformer_model
+    print(f"✓ Aza transformer model initialized successfully")
+except Exception as e:
+    print(f"✗ Failed to initialize Aza transformer model: {e}")
 
 
 @app.get("/")
@@ -340,6 +412,15 @@ async def get_available_models():
             "description": "Fine-tuned XLM-RoBERTa model for Kazakh sentiment analysis",
             "type": "deep_learning",
             "status":  "loaded"
+        })
+
+    if 'aza_transformer' in models:
+        available_models.append({
+            "id": "aza_transformer",
+            "name": "XLM-RoBERTa (Aza)",
+            "description": "Alternative fine-tuned XLM-RoBERTa model (Aza_model), with improved neutral performance",
+            "type": "deep_learning",
+            "status": "loaded"
         })
     
     return {"models": available_models}
@@ -578,6 +659,16 @@ async def get_model_stats():
             "device": str(transformer.device),
             "label_mapping": transformer.label_mapping,
             "max_length": transformer.max_length
+        }
+
+    if 'aza_transformer' in models:
+        aza = models['aza_transformer']
+        stats['aza_transformer'] = {
+            "model_type": "XLM-RoBERTa (Aza)",
+            "status": "loaded",
+            "device": str(aza.device),
+            "label_mapping": aza.label_mapping,
+            "max_length": aza.max_length
         }
     
     return stats
